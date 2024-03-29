@@ -1,0 +1,26 @@
+mysql_db:
+    name: "mysql"
+    host: "localhost"
+    port: "3306"
+    username: "ruslan"
+    password: "ruslan"
+    net: "tcp"
+
+mongo_db:
+    name: "mongodb"
+    host: "localhost"
+    port: "27017"
+
+redis_db:
+    host: "localhost"
+    port: "6379"
+
+http_server:
+    host: "localhost"
+    port: "8080"
+    timeout: "4s"
+    idle_timeout: "60s"
+    username: "ruslan"
+    password: "ruslan"
+
+log_level: "debug"

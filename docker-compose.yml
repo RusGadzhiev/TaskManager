@@ -1,0 +1,42 @@
+version: '3.1'
+
+services:
+  task_manager:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    container_name: task_manager
+    depends_on:
+      - redis
+      - mongo
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - ps
+
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    networks:
+      - ps
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - ps
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - ps
+networks:
+  ps:
