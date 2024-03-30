@@ -1,1 +1,3 @@
 .vscode
+cmd/task_manager/app.log
+cmd/task_manager/err.log
