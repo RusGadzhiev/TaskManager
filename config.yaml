@@ -1,18 +1,16 @@
 mysql_db:
     name: "mysql"
-    host: "localhost"
+    host: "host.docker.internal"
     port: "3306"
     username: "ruslan"
-    password: "ruslan"
-    net: "tcp"
-
+    
 mongo_db:
-    name: "mongodb"
-    host: "localhost"
+    name: "mongo"
+    host: "host.docker.internal"
     port: "27017"
 
 redis_db:
-    host: "localhost"
+    host: "host.docker.internal"
     port: "6379"
 
 http_server:
@@ -21,6 +19,5 @@ http_server:
     timeout: "4s"
     idle_timeout: "60s"
     username: "ruslan"
-    password: "ruslan"
 
 log_level: "debug"

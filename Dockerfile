@@ -2,6 +2,8 @@ FROM golang:latest AS builder
 
 WORKDIR /apps
 
+RUN export GO111MODULE=on
+
 COPY ./go.mod ./go.sum ./
 
 RUN go mod download

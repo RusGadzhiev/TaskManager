@@ -2,13 +2,12 @@ package config
 
 import (
 	"log"
-	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-const ConfigPath = "C:\\Users\\Руслан\\Documents\\Go\\GoCourse\\HW4\\config.yaml"
+const ConfigPath = "../../config.yaml"
 
 type Config struct {
 	// Env        string     `yaml:"env" env-required:"true"` можно и указать
@@ -25,7 +24,7 @@ type HTTPServer struct {
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 	User        string        `yaml:"username" env-required:"true"`
-	Password    string        `yaml:"password" env-required:"true"`
+	Password    string        `env:"server_pass"`
 }
 
 type MySQLDb struct {
@@ -33,8 +32,7 @@ type MySQLDb struct {
 	Host     string `yaml:"host" env-default:"localhost"`
 	Port     string `yaml:"port" env-default:"3306"`
 	User     string `yaml:"username"`
-	Password string `yaml:"password"`
-	Net      string `yaml:"net" env-default:"net"`
+	Password string `env:"mysql_pass"`
 }
 
 type MongoDb struct {
@@ -50,15 +48,24 @@ type RedisDb struct {
 
 func MustLoad() *Config {
 	// check if file exists
-	if _, err := os.Stat(ConfigPath); os.IsNotExist(err) {
+	/*if _, err := os.Stat(ConfigPath); os.IsNotExist(err) {
 		log.Fatalf("config file does not exist: %s", ConfigPath)
-	}
+	}*/
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(ConfigPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
+
+	/*err := cleanenv.ReadEnv(&cfg)
+	if err != nil {
+		log.Fatalf("cannot read config: %s", err)
+	}
+	cleanenv.ReadEnv(&cfg.MySQLDb)
+	if err != nil {
+		log.Fatalf("cannot read config: %s", err)
+	}*/
 
 	return &cfg
 }

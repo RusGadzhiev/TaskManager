@@ -9,10 +9,11 @@ import (
 	"log"
 
 	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 var (
-	ErrConnectingMySQL    = errors.New("error of connecting mysql db")
+	ErrConnectingMySQL    = errors.New("error of connection mysql db")
 	ErrPingMySQL          = errors.New("error of ping mysql db")
 	ErrCreatingTableMySQL = errors.New("error of creating tasks table")
 )
@@ -27,7 +28,6 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 	cfg := mysql.Config{
 		User:              config.User,
 		Passwd:            config.Password,
-		Net:               config.Net,
 		Addr:              config.Host + ":" + config.Port,
 		DBName:            config.Name,
 		InterpolateParams: true,
