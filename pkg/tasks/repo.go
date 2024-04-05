@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -39,7 +38,8 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 	}
 
 	db := sql.OpenDB(connector)
-	time.Sleep(5 * time.Second) // выяснить почему без этого не работает пинг
+	// строка ниже нужна чтобы база успела подняться, строка не нужна если контейнер task_manager в режиме restart always
+	// time.Sleep(5 * time.Second) // выяснить почему без этого не работает пинг
 
 	db.SetMaxOpenConns(10)
 	err = db.Ping()
