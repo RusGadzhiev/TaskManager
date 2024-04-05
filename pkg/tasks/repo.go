@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 var (
@@ -39,8 +39,9 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 	}
 
 	db := sql.OpenDB(connector)
+	time.Sleep(5 * time.Second) // выяснить почему без этого не работает пинг
 
-	// db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(10)
 	err = db.Ping()
 	if err != nil {
 		log.Fatalf("Error: %s, Description: %s", err, ErrPingMySQL)
@@ -48,7 +49,7 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 
 	query := `CREATE TABLE IF NOT EXISTS tasks(tasks_id int primary key auto_increment, owner text, 
 	executor text, description text, completed bool, assigned bool)`
-
+	// добавь индекс
 	_, err = db.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatalf("Error %s, Description: %s", err, ErrCreatingTableMySQL)

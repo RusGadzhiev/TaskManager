@@ -13,7 +13,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SERVER_PASSWORD: "${server_pass}"
+      mysql_pass: "${mysql_pass}"
+      server_pass: "${server_pass}"
     networks:
       - ps
 
@@ -21,12 +22,24 @@ services:
     image: mysql
     restart: always
     environment:
-      MYSQL_NAME: "mysql"
+      MYSQL_DATABASE: "mysql"
       MYSQL_HOST: "localhost"
+      MYSQL_ROOT_PASSWORD: "${mysql_pass}"
       MYSQL_PASSWORD: "${mysql_pass}"
-      MYSQL_USERNAME: "ruslan"
+      MYSQL_USER: "ruslan"
     ports:
       - "3306:3306"
+    networks:
+      - ps
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_NAME: "mongo"
+      MONGO_HOST: "localhost"
     networks:
       - ps
 
@@ -41,15 +54,5 @@ services:
     networks:
       - ps
 
-  mongo:
-    image: mongo
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_NAME: "mongo"
-      MONGO_HOST: "localhost"
-    networks:
-      - ps
 networks:
   ps:

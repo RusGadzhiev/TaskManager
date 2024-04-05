@@ -7,7 +7,11 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-const ConfigPath = "../../config.yaml"
+const (
+	ConfigPath    = "../../config.yaml"
+	EnvMySQLPass  = "mysql_pass"
+	EnvServerPass = "server_pass"
+)
 
 type Config struct {
 	// Env        string     `yaml:"env" env-required:"true"` можно и указать
@@ -47,25 +51,11 @@ type RedisDb struct {
 }
 
 func MustLoad() *Config {
-	// check if file exists
-	/*if _, err := os.Stat(ConfigPath); os.IsNotExist(err) {
-		log.Fatalf("config file does not exist: %s", ConfigPath)
-	}*/
-
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(ConfigPath, &cfg); err != nil {
 		log.Fatalf("cannot read config: %s", err)
 	}
-
-	/*err := cleanenv.ReadEnv(&cfg)
-	if err != nil {
-		log.Fatalf("cannot read config: %s", err)
-	}
-	cleanenv.ReadEnv(&cfg.MySQLDb)
-	if err != nil {
-		log.Fatalf("cannot read config: %s", err)
-	}*/
 
 	return &cfg
 }

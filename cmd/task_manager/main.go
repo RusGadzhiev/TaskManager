@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-
 	cfg := config.MustLoad()
 
 	ctx := context.Background() // сделай нормальный контекст
@@ -24,6 +23,7 @@ func main() {
 	defer logger.Sync()
 
 	tasksRepo := tasks.NewTasksRepoMySQL(ctx, &cfg.MySQLDb)
+	logger.Info("Tasks repo started successfully")
 
 	usersRepo, client := users.NewUsersRepoMongoDB(ctx, &cfg.MongoDb)
 	defer func() {
@@ -31,9 +31,10 @@ func main() {
 			panic(err)
 		}
 	}()
+	logger.Info("Users repo started successfully")
 
 	sessionsRepo := sessions.NewSessionsRepoRedis(ctx, &cfg.RedisDb)
-
+	logger.Info("Sessions repo started successfully")
 	// var _ *tasks.TasksRepo = (*tasks.TasksRepoMySQL)(nil) // почему не работает проверка
 
 	tasksHandler := &handlers.TasksHandler{
@@ -73,5 +74,6 @@ func main() {
 		return middleware.AuthMiddleware(h)
 	})*/
 	// подключи другие middleware
-	http.ListenAndServe(":8080", r) // тут лучше ListenAndServeTLS
+	logger.Info("Start listen at " + cfg.HTTPServer.Host + ":" + cfg.HTTPServer.Port)
+	http.ListenAndServe(":"+cfg.HTTPServer.Port, r) // тут лучше ListenAndServeTLS
 }

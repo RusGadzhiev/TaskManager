@@ -31,7 +31,7 @@ type UsersRepoMongoDB struct {
 }
 
 func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMongoDB, *mongo.Client) {
-	uri := fmt.Sprintf(cfg.Name + "://" + cfg.Host + ":" + cfg.Port)
+	uri := fmt.Sprintf("mongodb://" + cfg.Host + ":" + cfg.Port + "/messenger?directConnection=true")
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		log.Fatalf("Error: %s, Description: %s", err, ErrConnectionMongo)

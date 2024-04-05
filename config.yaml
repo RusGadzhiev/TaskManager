@@ -1,16 +1,15 @@
 mysql_db:
     name: "mysql"
-    host: "host.docker.internal"
+    host: "mysql" # по названию сервиса в докер-компоуз
     port: "3306"
     username: "ruslan"
-    
 mongo_db:
     name: "mongo"
-    host: "host.docker.internal"
+    host: "mongo"
     port: "27017"
 
 redis_db:
-    host: "host.docker.internal"
+    host: "redis"
     port: "6379"
 
 http_server:
