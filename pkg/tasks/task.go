@@ -12,11 +12,12 @@ type Task struct {
 }
 
 type TasksRepo interface {
-	GetAllTasks(ctx context.Context) ([]*Task, error)                      // /tasks
-	GetCreatedTasks(ctx context.Context, username string) ([]*Task, error) // owner
-	GetMyTasks(ctx context.Context, username string) ([]*Task, error)      // /my
-	Add(ctx context.Context, task *Task) error                             // /new XXX YYY ZZZ
-	Assign(ctx context.Context, taskId uint64, username string) error      // assign_$ID`
-	Unassign(ctx context.Context, taskId uint64) error                     // unassign_$ID
-	Complete(ctx context.Context, taskId uint64) error                     // resolve_$ID`
+	GetAllTasks(ctx context.Context) ([]*Task, error)
+	GetCreatedTasks(ctx context.Context, username string) ([]*Task, error)
+	GetMyTasks(ctx context.Context, username string) ([]*Task, error)
+	// возвращает id вставленной задачи
+	Add(ctx context.Context, task *Task) (uint64, error)
+	Assign(ctx context.Context, taskId uint64, username string) error
+	Unassign(ctx context.Context, taskId uint64) error
+	Complete(ctx context.Context, taskId uint64) error
 }

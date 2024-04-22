@@ -15,16 +15,12 @@ import (
 var (
 	ErrConnectionMongo = errors.New("error of connecting with mongo db")
 	ErrPingMongo       = errors.New("error of ping mongo db")
-	ErrNoUser          = errors.New("no such user")
-	ErrUserExist       = errors.New("user with this login exists")
 )
 
 const (
 	DBName         = "task_manager"
 	CollectionName = "users"
 )
-
-// как тут используются контексты
 
 type UsersRepoMongoDB struct {
 	DB *mongo.Collection
@@ -46,28 +42,26 @@ func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMo
 	return &UsersRepoMongoDB{DB: collection}, client
 }
 
-func (repo *UsersRepoMongoDB) Check(ctx context.Context, user *User) (bool, error) {
-	record := &User{}
-	res := repo.DB.FindOne(ctx, bson.M{"login": user.Login})
-	if res.Err() == mongo.ErrNoDocuments {
-		return false, ErrNoUser
+func (repo *UsersRepoMongoDB) IsUserExist(ctx context.Context, name string) bool {
+	res := repo.DB.FindOne(ctx, bson.M{UserName: name})
+	return res.Err() != mongo.ErrNoDocuments
+}
+
+func (repo *UsersRepoMongoDB) GetPassword(ctx context.Context, name string) (string, error) {
+	res := repo.DB.FindOne(ctx, bson.M{UserName: name})
+	if res.Err() != nil {
+		return "", fmt.Errorf("get password mongo error: %w", res.Err())
 	}
-	res.Decode(record)
-	return true, nil
+	var user User
+	err := res.Decode(&user)
+	if err != nil {
+		return "", fmt.Errorf("get password mongo error (decode): %w", err)
+	}
+	return user.Password, nil
 }
 
 func (repo *UsersRepoMongoDB) Add(ctx context.Context, user *User) error {
-
-	if exist, _ := repo.Check(ctx, user); exist {
-		return ErrUserExist
-	}
-
-	newItem := bson.M{
-		"login":    user.Login,
-		"password": user.Password,
-	}
-
-	_, err := repo.DB.InsertOne(ctx, newItem)
+	_, err := repo.DB.InsertOne(ctx, *user)
 	if err != nil {
 		return fmt.Errorf("insert mongo error: %w", err)
 	}

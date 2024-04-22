@@ -7,6 +7,7 @@ import (
 	"HW4/pkg/tasks"
 	"HW4/pkg/users"
 	"context"
+	"html/template"
 	"net/http"
 
 	"HW4/pkg/logger"
@@ -16,6 +17,7 @@ import (
 
 func main() {
 	cfg := config.MustLoad()
+	tmpl := template.Must(template.ParseGlob("./templates/*"))
 
 	ctx := context.Background() // сделай нормальный контекст
 
@@ -40,40 +42,36 @@ func main() {
 	tasksHandler := &handlers.TasksHandler{
 		TasksRepo: tasksRepo,
 		Logger:    logger,
+		Tmpl:      tmpl,
 	}
 
 	sessionsHandler := &handlers.SessionsHandler{
 		SessionsRepo: sessionsRepo,
 		UsersRepo:    usersRepo,
 		Logger:       logger,
+		Tmpl:         tmpl,
 	}
-
-	/*middleware := &handlers.MiddlewareHandler{
-		SessionsRepo: sessionsRepo,
-		UsersRepo:    usersRepo,
-		Logger:       logger,
-	}*/
 
 	r := mux.NewRouter()
 	r.StrictSlash(true)
+	// повесь и другие методы
 	r.HandleFunc("/", tasksHandler.List).Methods("GET")
-	r.HandleFunc("/login", sessionsHandler.Login).Methods("POST")
-	r.HandleFunc("/logout", sessionsHandler.Logout).Methods("POST")
-	r.HandleFunc("/registration", sessionsHandler.Registration).Methods("POST")
+	r.HandleFunc("/login", sessionsHandler.Login).Methods("POST", "GET")
+	r.HandleFunc("/logout", sessionsHandler.Logout).Methods("POST", "GET")
+	r.HandleFunc("/registration", sessionsHandler.Registration).Methods("POST", "GET")
+	r.Handle("/tasks", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.MyList))).Methods("GET")
+	r.Handle("/tasks/created", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.CreatedList))).Methods("GET")
+	r.Handle("/tasks/new", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.New))).Methods("POST", "GET")
+	r.Handle("/tasks/assign", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Assign))).Methods("POST", "GET")
+	r.Handle("/tasks/unassign", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Unassign))).Methods("POST", "GET")
+	r.Handle("/tasks/complete", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Complete))).Methods("POST", "GET")
 
-	taskRouter := mux.NewRouter()
-	taskRouter.StrictSlash(true)
-	taskRouter.HandleFunc("/tasks", tasksHandler.MyList).Methods("GET")
-	taskRouter.HandleFunc("/tasks/created", tasksHandler.CreatedList).Methods("GET")
-	taskRouter.HandleFunc("/tasks/new", tasksHandler.New).Methods("POST")
-	taskRouter.HandleFunc("/tasks/assign/{id}", tasksHandler.Assign).Methods("POST")
-	taskRouter.HandleFunc("/tasks/unassign/{id}", tasksHandler.Unassign).Methods("POST")
-	taskRouter.HandleFunc("/tasks/complete/{id}", tasksHandler.Complete).Methods("POST")
-
-	/*taskRouter.Use(func(h http.Handler) http.Handler {
-		return middleware.AuthMiddleware(h)
-	})*/
-	// подключи другие middleware
+	r.Use(func(h http.Handler) http.Handler {
+		return sessionsHandler.PanicRecoverMiddleware(h)
+	})
+	r.Use(func(h http.Handler) http.Handler {
+		return sessionsHandler.LoggingMiddleware(h)
+	})
 	logger.Info("Start listen at " + cfg.HTTPServer.Host + ":" + cfg.HTTPServer.Port)
 	http.ListenAndServe(":"+cfg.HTTPServer.Port, r) // тут лучше ListenAndServeTLS
 }

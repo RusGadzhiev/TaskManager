@@ -2,76 +2,55 @@ package handlers
 
 import (
 	"HW4/pkg/sessions"
-	"HW4/pkg/users"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
-	"go.uber.org/zap"
 )
 
-// наверно структура не нужна
-type MiddlewareHandler struct {
-	SessionsRepo sessions.SessionsRepo
-	UsersRepo    users.UsersRepo
-	Logger       *zap.SugaredLogger
-}
+const (
+	UserName = "username"
+)
 
-func (h *MiddlewareHandler) LoggingMiddleware(next http.Handler) http.Handler {
+func (h *SessionsHandler) LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+		h.Logger.Info("New request: ", "method - ", r.Method, " remote_addr - ", r.RemoteAddr, " url - ", r.URL.Path)
 		next.ServeHTTP(w, r)
-		h.Logger.Info("New request", "method", r.Method, "remote_addr", r.RemoteAddr, "url", r.URL.Path, "time", time.Since(start))
 	})
 }
 
-func (h *MiddlewareHandler) AuthMiddleware(next http.Handler) http.Handler {
+// по значению куки устанавливает значение username
+func (h *SessionsHandler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		session, err := r.Cookie("session")
+		cookie, err := r.Cookie(CookieName)
 		if err != nil {
-			h.Logger.Info("New request",
-				"method", r.Method,
-				"remote_addr", r.RemoteAddr,
-				"url", r.URL.Path,
-				"error", "Permission denied")
-			http.Redirect(w, r, "/", http.StatusFound)
+			h.Logger.Warn("Permission denied")
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
-		vars := mux.Vars(r)
-		id, err := strconv.Atoi(vars["id"])
-		if err != nil {
-			http.Error(w, ErrBadId.Error(), http.StatusBadGateway)
+
+		username, err := h.SessionsRepo.GetUser(r.Context(), cookie.Value)
+		if err == sessions.ErrNoUserBySession {
+			h.Logger.Info(err.Error())
+			http.Redirect(w, r, "/login", http.StatusUnauthorized)
 			return
-		}
-		s, err := h.SessionsRepo.GetSession(r.Context(), uint64(id))
-		if err != nil {
+		} else if err != nil {
+			h.Logger.Error(err.Error())
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
-		if s.Cookie.Value != session.Value {
-			h.Logger.Info("New request",
-				"method", r.Method,
-				"remote_addr", r.RemoteAddr,
-				"url", r.URL.Path,
-				"error", "Cookies dont same")
-			http.Redirect(w, r, "/", http.StatusFound)
-			return
-		}
+
+		h.Logger.Info("Auth Success")
+		mux.Vars(r)[UserName] = username
 		next.ServeHTTP(w, r)
 	})
 }
 
-func (h *MiddlewareHandler) PanicRecoverMiddleware(next http.Handler) http.Handler {
+func (h *SessionsHandler) PanicRecoverMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				h.Logger.Info("New request",
-					"method", r.Method,
-					"remote_addr", r.RemoteAddr,
-					"url", r.URL.Path,
-					"recovered", err)
-				http.Error(w, "Internal server error", 500)
+				h.Logger.Error("Url: ", r.URL.Path, " Recovered: ", err)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			}
 		}()
 		next.ServeHTTP(w, r)

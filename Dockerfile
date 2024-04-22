@@ -16,6 +16,7 @@ FROM alpine:latest AS runner
 
 COPY --from=builder /app/task_manager .
 COPY --from=builder /app/config.yaml ./config.yaml
+COPY --from=builder /app/templates ./templates
 
 EXPOSE 8080 3306 27017 6379
 

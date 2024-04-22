@@ -47,7 +47,7 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 		log.Fatalf("Error: %s, Description: %s", err, ErrPingMySQL)
 	}
 
-	query := `CREATE TABLE IF NOT EXISTS tasks(tasks_id int primary key auto_increment, owner text, 
+	query := `CREATE TABLE IF NOT EXISTS tasks(id int primary key auto_increment, owner text, 
 	executor text, description text, completed bool, assigned bool)`
 	// добавь индекс
 	_, err = db.ExecContext(ctx, query)
@@ -77,8 +77,8 @@ func (repo *TasksRepoMySQL) GetAllTasks(ctx context.Context) ([]*Task, error) {
 	return tasks, nil
 }
 
-func (repo *TasksRepoMySQL) Add(ctx context.Context, task *Task) error {
-	_, err := repo.DB.ExecContext(ctx,
+func (repo *TasksRepoMySQL) Add(ctx context.Context, task *Task) (uint64, error) {
+	res, err := repo.DB.ExecContext(ctx,
 		"INSERT INTO tasks (`owner`, `executor`, `description`, `completed`, `assigned`) VALUES (?, ?, ?, ?, ?)",
 		task.Owner,
 		task.Executor,
@@ -87,9 +87,13 @@ func (repo *TasksRepoMySQL) Add(ctx context.Context, task *Task) error {
 		task.Assigned,
 	)
 	if err != nil {
-		return fmt.Errorf("insert mysql error: %w", err)
+		return 0, fmt.Errorf("insert mysql error: %w", err)
 	}
-	return nil
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("insert (last inserted ID) mysql error: %w", err)
+	}
+	return uint64(id), nil
 }
 
 func (repo *TasksRepoMySQL) GetCreatedTasks(ctx context.Context, username string) ([]*Task, error) {
@@ -131,7 +135,7 @@ func (repo *TasksRepoMySQL) GetMyTasks(ctx context.Context, username string) ([]
 }
 
 func (repo *TasksRepoMySQL) Assign(ctx context.Context, taskId uint64, username string) error {
-	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `executor` = ?, `assigned` = 1, WHERE id = ?", username, taskId)
+	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `executor` = ?, `assigned` = 1 WHERE id = ?", username, taskId)
 	if err != nil {
 		return fmt.Errorf("update mysql error: %w", err)
 	}
@@ -139,7 +143,7 @@ func (repo *TasksRepoMySQL) Assign(ctx context.Context, taskId uint64, username 
 }
 
 func (repo *TasksRepoMySQL) Unassign(ctx context.Context, taskId uint64) error {
-	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `assigned` = 0, WHERE id = ?", taskId)
+	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `executor` = \"\", `assigned` = 0 WHERE id = ?", taskId)
 	if err != nil {
 		return fmt.Errorf("update mysql error: %w", err)
 	}
@@ -147,7 +151,7 @@ func (repo *TasksRepoMySQL) Unassign(ctx context.Context, taskId uint64) error {
 }
 
 func (repo *TasksRepoMySQL) Complete(ctx context.Context, taskId uint64) error {
-	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `completed` = 1, WHERE id = ?", taskId)
+	_, err := repo.DB.QueryContext(ctx, "UPDATE tasks SET `completed` = 1 WHERE id = ?", taskId)
 	if err != nil {
 		return fmt.Errorf("update mysql error: %w", err)
 	}

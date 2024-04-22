@@ -3,18 +3,17 @@ package sessions
 import (
 	"HW4/internal/config"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
 var (
 	ErrPingRedis = errors.New("error of ping redis db")
-	ErrNoSession = errors.New("session with this id does not exist")
+	ErrNoUserBySession = errors.New("user with this id don`t exist")
 )
 
 type SessionsRepoRedis struct {
@@ -38,31 +37,28 @@ func NewSessionsRepoRedis(ctx context.Context, cfg *config.RedisDb) *SessionsRep
 	}
 }
 
-func (repo *SessionsRepoRedis) GetSession(ctx context.Context, id uint64) (*Session, error) {
-	val, err := repo.DB.HGet(ctx, "session", string(rune(id))).Result()
+func (repo *SessionsRepoRedis) GetUser(ctx context.Context, cookieVal string) (string, error) {
+	val, err := repo.DB.Get(ctx, cookieVal).Result()
 	if err == redis.Nil {
-		return nil, ErrNoSession
+		return "", ErrNoUserBySession
 	} else if err != nil {
-		return nil, fmt.Errorf("get redis error: %w", err)
+		return "", fmt.Errorf("get redis error: %w", err)
 	}
-
-	session := &Session{}
-	err = json.Unmarshal([]byte(val), session)
-	if err != nil {
-		return nil, err
-	}
-	return session, err
+	return val, nil
 }
 
-func (repo *SessionsRepoRedis) Add(ctx context.Context, session *Session) error {
-	id := uuid.New().String()
-	jsonValue, err := json.Marshal(*session)
-	if err != nil {
-		return err
-	}
-	_, err = repo.DB.HSet(ctx, "session", id, jsonValue).Result()
+func (repo *SessionsRepoRedis) Add(ctx context.Context, cookieVal string, username string, dur time.Duration) error {
+	_, err := repo.DB.Set(ctx, cookieVal, username, dur).Result()
 	if err != nil {
 		return fmt.Errorf("insert redis error: %w", err)
+	}
+	return nil
+}
+
+func (repo *SessionsRepoRedis) Delete(ctx context.Context, cookieVal string) error {
+	_, err := repo.DB.Del(ctx, cookieVal).Result()
+	if err != nil {
+		return fmt.Errorf("delete redis error: %w", err)
 	}
 	return nil
 }

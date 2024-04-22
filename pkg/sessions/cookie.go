@@ -1,18 +1,16 @@
 package sessions
 
 import (
-	"HW4/pkg/users"
 	"context"
-	"net/http"
+	"time"
 )
 
-type Session struct {
-	Id     uint64      `json:"id"`
-	Cookie http.Cookie `json:"cookie"`
-	User   users.User  `json:"user"`
-}
-
+// хранит мапу userId -> cookie
 type SessionsRepo interface {
-	GetSession(ctx context.Context, id uint64) (*Session, error)
-	Add(ctx context.Context, session *Session) error
+	// возвращает username пользователя по значению сессии
+	GetUser(ctx context.Context, cookieVal string) (string, error)
+	// добавляет новую сессию
+	Add(ctx context.Context, cookieVal string, username string, dur time.Duration) error
+	// удаляет cookie
+	Delete(ctx context.Context, cookieVal string) error
 }
