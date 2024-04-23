@@ -1,4 +1,4 @@
-module HW4
+module github.com/RusGadzhiev/TaskManager
 
 go 1.21.0
 

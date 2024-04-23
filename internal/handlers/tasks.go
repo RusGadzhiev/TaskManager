@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"HW4/internal/tasks"
+	"github.com/RusGadzhiev/TaskManager/internal/tasks"
 	"html/template"
 	"net/http"
 	"strconv"

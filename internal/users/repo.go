@@ -1,7 +1,7 @@
 package users
 
 import (
-	"HW4/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/config"
 	"context"
 	"errors"
 	"fmt"

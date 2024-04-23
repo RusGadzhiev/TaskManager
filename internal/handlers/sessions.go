@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"HW4/internal/sessions"
-	"HW4/internal/users"
+	"github.com/RusGadzhiev/TaskManager/internal/sessions"
+	"github.com/RusGadzhiev/TaskManager/internal/users"
 	"encoding/json"
 	"errors"
 	"html/template"

@@ -1,16 +1,16 @@
 package main
 
 import (
-	"HW4/internal/config"
-	"HW4/internal/handlers"
-	"HW4/internal/sessions"
-	"HW4/internal/tasks"
-	"HW4/internal/users"
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/handlers"
+	"github.com/RusGadzhiev/TaskManager/internal/sessions"
+	"github.com/RusGadzhiev/TaskManager/internal/tasks"
+	"github.com/RusGadzhiev/TaskManager/internal/users"
 	"context"
 	"html/template"
 	"net/http"
 
-	"HW4/pkg/logger"
+	"github.com/RusGadzhiev/TaskManager/pkg/logger"
 
 	"github.com/gorilla/mux"
 )

@@ -1,8 +1,8 @@
 package tasks
 
 import (
-	"HW4/internal/config"
-	"HW4/internal/users"
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/users"
 	"context"
 	"database/sql"
 	"errors"

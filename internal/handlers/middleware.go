@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"HW4/internal/sessions"
+	"github.com/RusGadzhiev/TaskManager/internal/sessions"
 	"net/http"
 
 	"github.com/gorilla/mux"
