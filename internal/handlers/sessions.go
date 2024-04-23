@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"HW4/pkg/sessions"
-	"HW4/pkg/users"
+	"HW4/internal/sessions"
+	"HW4/internal/users"
 	"encoding/json"
 	"errors"
 	"html/template"
@@ -36,11 +36,7 @@ type SessionsHandler struct {
 func (h *SessionsHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		err := h.Tmpl.ExecuteTemplate(w, "login.html", nil)
-		if err != nil {
-			h.Logger.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.execTmpl(w, "login.html")
 		return
 	}
 
@@ -87,22 +83,14 @@ func (h *SessionsHandler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *SessionsHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		err := h.Tmpl.ExecuteTemplate(w, "logout.html", nil)
-		if err != nil {
-			h.Logger.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.execTmpl(w, "logout.html")
 		return
 	}
 
 	cookie, err := r.Cookie(CookieName)
 	if err != nil {
-		h.Logger.Info("New request",
-			"method", r.Method,
-			"remote_addr", r.RemoteAddr,
-			"url", r.URL.Path,
-			"error", "Permission denied")
-		http.Redirect(w, r, "/", http.StatusFound)
+		h.Logger.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	h.SessionsRepo.Delete(r.Context(), cookie.Value)
@@ -115,17 +103,8 @@ func (h *SessionsHandler) Logout(w http.ResponseWriter, r *http.Request) {
 // http://localhost:8080/registration
 func (h *SessionsHandler) Registration(w http.ResponseWriter, r *http.Request) {
 
-	h.Logger.Info("New request:",
-		" method: ", r.Method,
-		" remote_addr: ", r.RemoteAddr,
-		" url: ", r.URL.Path)
-
 	if r.Method == http.MethodGet {
-		err := h.Tmpl.ExecuteTemplate(w, "registration.html", nil)
-		if err != nil {
-			h.Logger.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.execTmpl(w, "registration.html")
 		return
 	}
 
@@ -150,6 +129,15 @@ func (h *SessionsHandler) Registration(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// выпонлняет шаблон с именем tmpl, ответ в w записывает
+func (h *SessionsHandler) execTmpl(w http.ResponseWriter, tmpl string) {
+	err := h.Tmpl.ExecuteTemplate(w, tmpl, nil)
+	if err != nil {
+		h.Logger.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // renderJSON преобразует 'v' в формат JSON и записывает результат, в виде ответа, в w.
 func renderJSON(w http.ResponseWriter, v interface{}, logger *zap.SugaredLogger) {
 	json, err := json.Marshal(v)
@@ -168,3 +156,4 @@ func randStringChars(n int) string {
 	}
 	return string(b)
 }
+

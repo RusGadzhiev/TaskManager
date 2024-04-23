@@ -2,10 +2,10 @@ package main
 
 import (
 	"HW4/internal/config"
-	"HW4/pkg/handlers"
-	"HW4/pkg/sessions"
-	"HW4/pkg/tasks"
-	"HW4/pkg/users"
+	"HW4/internal/handlers"
+	"HW4/internal/sessions"
+	"HW4/internal/tasks"
+	"HW4/internal/users"
 	"context"
 	"html/template"
 	"net/http"

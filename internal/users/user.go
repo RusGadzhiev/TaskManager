@@ -12,7 +12,6 @@ const (
 	Password      = "password"
 )
 
-// хранит структуру юзеров
 type UsersRepo interface {
 	// добавляет нового юзера, не проверяя существование такого
 	Add(ctx context.Context, user *User) error

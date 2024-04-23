@@ -15,7 +15,6 @@ services:
       - "8080:8080"
     environment:
       mysql_pass: "${mysql_pass}"
-      server_pass: "${server_pass}"
     networks:
       - ps
 

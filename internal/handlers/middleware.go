@@ -1,14 +1,10 @@
 package handlers
 
 import (
-	"HW4/pkg/sessions"
+	"HW4/internal/sessions"
 	"net/http"
 
 	"github.com/gorilla/mux"
-)
-
-const (
-	UserName = "username"
 )
 
 func (h *SessionsHandler) LoggingMiddleware(next http.Handler) http.Handler {
@@ -23,8 +19,8 @@ func (h *SessionsHandler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(CookieName)
 		if err != nil {
-			h.Logger.Warn("Permission denied")
-			http.Redirect(w, r, "/login", http.StatusFound)
+			h.Logger.Info("Permission denied")
+			http.Redirect(w, r, "/login", http.StatusUnauthorized)
 			return
 		}
 

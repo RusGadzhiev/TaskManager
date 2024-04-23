@@ -28,7 +28,6 @@ type HTTPServer struct {
 	Timeout     time.Duration `yaml:"timeout" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 	User        string        `yaml:"username" env-required:"true"`
-	Password    string        `env:"server_pass"`
 }
 
 type MySQLDb struct {
