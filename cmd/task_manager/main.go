@@ -1,33 +1,46 @@
 package main
 
 import (
-	"github.com/RusGadzhiev/TaskManager/internal/config"
-	"github.com/RusGadzhiev/TaskManager/internal/handlers"
-	"github.com/RusGadzhiev/TaskManager/internal/sessions"
-	"github.com/RusGadzhiev/TaskManager/internal/tasks"
-	"github.com/RusGadzhiev/TaskManager/internal/users"
 	"context"
 	"html/template"
-	"net/http"
+	"os/signal"
+	"syscall"
+
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/service"
+	"github.com/RusGadzhiev/TaskManager/internal/storage/sessionsStorage/redis"
+	"github.com/RusGadzhiev/TaskManager/internal/storage/tasksStorage/mysql"
+	"github.com/RusGadzhiev/TaskManager/internal/storage/usersStorage/mongo"
+	"github.com/RusGadzhiev/TaskManager/internal/transport/http/httpHandler"
+	"github.com/RusGadzhiev/TaskManager/internal/transport/http/httpServer"
+	"go.uber.org/zap"
 
 	"github.com/RusGadzhiev/TaskManager/pkg/logger"
-
-	"github.com/gorilla/mux"
 )
+
+// что делать приватным а что публичным
+const (
+	templatePattern = "./templates/*"
+)
+
+type Server interface {
+	Run(ctx context.Context, logger *zap.SugaredLogger) error
+}
 
 func main() {
 	cfg := config.MustLoad()
-	tmpl := template.Must(template.ParseGlob("./templates/*"))
+	tmpl := template.Must(template.ParseGlob(templatePattern))
 
-	ctx := context.Background() // сделай нормальный контекст
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	logger := logger.NewZapLogger()
 	defer logger.Sync()
 
-	tasksRepo := tasks.NewTasksRepoMySQL(ctx, &cfg.MySQLDb)
+	tasksRepo := mysql.NewTasksRepoMySQL(ctx, &cfg.MySQLDb)
 	logger.Info("Tasks repo started successfully")
 
-	usersRepo, client := users.NewUsersRepoMongoDB(ctx, &cfg.MongoDb)
+	usersRepo, client := mongo.NewUsersRepoMongoDB(ctx, &cfg.MongoDb)
 	defer func() {
 		if err := client.Disconnect(ctx); err != nil {
 			panic(err)
@@ -35,43 +48,20 @@ func main() {
 	}()
 	logger.Info("Users repo started successfully")
 
-	sessionsRepo := sessions.NewSessionsRepoRedis(ctx, &cfg.RedisDb)
+	sessionsRepo := redis.NewSessionsRepoRedis(ctx, &cfg.RedisDb)
 	logger.Info("Sessions repo started successfully")
-	// var _ *tasks.TasksRepo = (*tasks.TasksRepoMySQL)(nil) // почему не работает проверка
 
-	tasksHandler := &handlers.TasksHandler{
-		TasksRepo: tasksRepo,
-		Logger:    logger,
-		Tmpl:      tmpl,
+	usersService := service.NewUsersService(usersRepo)
+	tasksService := service.NewTasksService(tasksRepo)
+	sessionsService := service.NewSessionsService(sessionsRepo)
+
+	mainService := service.NewService(*usersService, *sessionsService, *tasksService)
+
+	httpHandler := httpHandler.NewHttpHandler(mainService, logger, tmpl)
+	var server Server
+	server = httpServer.NewHttpServer(ctx, httpHandler, &cfg.HTTPServer)
+
+	if err := server.Run(ctx, logger); err != nil {
+		logger.Fatal(ctx, err)
 	}
-
-	sessionsHandler := &handlers.SessionsHandler{
-		SessionsRepo: sessionsRepo,
-		UsersRepo:    usersRepo,
-		Logger:       logger,
-		Tmpl:         tmpl,
-	}
-
-	r := mux.NewRouter()
-	r.StrictSlash(true)
-	// повесь и другие методы
-	r.HandleFunc("/", tasksHandler.List).Methods("GET")
-	r.HandleFunc("/login", sessionsHandler.Login).Methods("POST", "GET")
-	r.HandleFunc("/logout", sessionsHandler.Logout).Methods("POST", "GET")
-	r.HandleFunc("/registration", sessionsHandler.Registration).Methods("POST", "GET")
-	r.Handle("/tasks", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.MyList))).Methods("GET")
-	r.Handle("/tasks/created", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.CreatedList))).Methods("GET")
-	r.Handle("/tasks/new", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.New))).Methods("POST", "GET")
-	r.Handle("/tasks/assign", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Assign))).Methods("POST", "GET")
-	r.Handle("/tasks/unassign", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Unassign))).Methods("POST", "GET")
-	r.Handle("/tasks/complete", sessionsHandler.AuthMiddleware(http.HandlerFunc(tasksHandler.Complete))).Methods("POST", "GET")
-
-	r.Use(func(h http.Handler) http.Handler {
-		return sessionsHandler.PanicRecoverMiddleware(h)
-	})
-	r.Use(func(h http.Handler) http.Handler {
-		return sessionsHandler.LoggingMiddleware(h)
-	})
-	logger.Info("Start listen at " + cfg.HTTPServer.Host + ":" + cfg.HTTPServer.Port)
-	http.ListenAndServe(":"+cfg.HTTPServer.Port, r) // тут лучше ListenAndServeTLS
 }

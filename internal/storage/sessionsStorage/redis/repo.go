@@ -1,19 +1,20 @@
-package sessions
+package redis
 
 import (
-	"github.com/RusGadzhiev/TaskManager/internal/config"
 	"context"
 	"errors"
 	"fmt"
 	"log"
 	"time"
 
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/service"
+
 	"github.com/redis/go-redis/v9"
 )
 
 var (
 	ErrPingRedis = errors.New("error of ping redis db")
-	ErrNoUserBySession = errors.New("user with this id don`t exist")
 )
 
 type SessionsRepoRedis struct {
@@ -40,7 +41,7 @@ func NewSessionsRepoRedis(ctx context.Context, cfg *config.RedisDb) *SessionsRep
 func (repo *SessionsRepoRedis) GetUser(ctx context.Context, cookieVal string) (string, error) {
 	val, err := repo.DB.Get(ctx, cookieVal).Result()
 	if err == redis.Nil {
-		return "", ErrNoUserBySession
+		return "", service.ErrNoUserBySession
 	} else if err != nil {
 		return "", fmt.Errorf("get redis error: %w", err)
 	}

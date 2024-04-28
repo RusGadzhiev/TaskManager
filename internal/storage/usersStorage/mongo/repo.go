@@ -1,11 +1,13 @@
-package users
+package mongo
 
 import (
-	"github.com/RusGadzhiev/TaskManager/internal/config"
 	"context"
 	"errors"
 	"fmt"
 	"log"
+
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/service"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -42,25 +44,21 @@ func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMo
 	return &UsersRepoMongoDB{DB: collection}, client
 }
 
-func (repo *UsersRepoMongoDB) IsUserExist(ctx context.Context, name string) bool {
-	res := repo.DB.FindOne(ctx, bson.M{UserName: name})
-	return res.Err() != mongo.ErrNoDocuments
-}
-
-func (repo *UsersRepoMongoDB) GetPassword(ctx context.Context, name string) (string, error) {
-	res := repo.DB.FindOne(ctx, bson.M{UserName: name})
-	if res.Err() != nil {
-		return "", fmt.Errorf("get password mongo error: %w", res.Err())
+func (repo *UsersRepoMongoDB) GetUser(ctx context.Context, username string) (*service.User, error) {
+	res := repo.DB.FindOne(ctx, bson.M{service.UserName: username})
+	if res.Err() == mongo.ErrNoDocuments {
+		return nil, service.ErrNoUser
+	} else if res.Err() != nil {
+		return nil, fmt.Errorf("get user mongo error: %w", res.Err())
 	}
-	var user User
+	var user service.User
 	err := res.Decode(&user)
 	if err != nil {
-		return "", fmt.Errorf("get password mongo error (decode): %w", err)
+		return nil, fmt.Errorf("get user mongo error (decode): %w", err)
 	}
-	return user.Password, nil
+	return &user, nil
 }
-
-func (repo *UsersRepoMongoDB) Add(ctx context.Context, user *User) error {
+func (repo *UsersRepoMongoDB) AddUser(ctx context.Context, user *service.User) error {
 	_, err := repo.DB.InsertOne(ctx, *user)
 	if err != nil {
 		return fmt.Errorf("insert mongo error: %w", err)

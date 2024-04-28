@@ -8,9 +8,7 @@ import (
 )
 
 const (
-	ConfigPath    = "../../config.yaml"
-	EnvMySQLPass  = "mysql_pass"
-	EnvServerPass = "server_pass"
+	ConfigPath = "../../config.yaml"
 )
 
 type Config struct {
@@ -19,7 +17,6 @@ type Config struct {
 	MySQLDb    MySQLDb    `yaml:"mysql_db"`
 	MongoDb    MongoDb    `yaml:"mongo_db"`
 	RedisDb    RedisDb    `yaml:"redis_db"`
-	LogLevel   string     `yaml:"log_level"`
 }
 
 type HTTPServer struct {
