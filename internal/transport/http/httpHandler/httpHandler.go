@@ -30,8 +30,6 @@ type TasksService interface {
 }
 
 type UsersService interface {
-	// проверяет пароль
-	CheckPass(ctx context.Context, username string)
 	// возвращает ошибку service.ErrNoUser если юзера нет, ошбику service.ErrIncorrectPassword если пароль неверный
 	Authentificate(ctx context.Context, user *service.User) error
 	// возвращает ошибку service.ErrUserExist если юзер уже есть

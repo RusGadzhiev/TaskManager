@@ -17,9 +17,10 @@ type HttpServer struct {
 func NewHttpServer(ctx context.Context, h *httpHandler.HttpHandler, cfg *config.HTTPServer) *HttpServer {
 	return &HttpServer{
 		server: &http.Server{
-			Addr:         cfg.Host + ":" + cfg.Port,
+			Addr:         ":" + cfg.Port,
 			ReadTimeout:  cfg.Timeout,
 			WriteTimeout: cfg.Timeout,
+			IdleTimeout:  cfg.IdleTimeout,
 			Handler:      h.Router(),
 		}}
 }

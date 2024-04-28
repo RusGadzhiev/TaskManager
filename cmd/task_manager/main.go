@@ -58,8 +58,7 @@ func main() {
 	mainService := service.NewService(*usersService, *sessionsService, *tasksService)
 
 	httpHandler := httpHandler.NewHttpHandler(mainService, logger, tmpl)
-	var server Server
-	server = httpServer.NewHttpServer(ctx, httpHandler, &cfg.HTTPServer)
+	server := httpServer.NewHttpServer(ctx, httpHandler, &cfg.HTTPServer)
 
 	if err := server.Run(ctx, logger); err != nil {
 		logger.Fatal(ctx, err)

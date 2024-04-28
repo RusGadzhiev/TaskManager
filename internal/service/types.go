@@ -18,7 +18,7 @@ const (
 	Description = "description"
 	Executor    = "executor"
 	UserName    = "username"
-	TaskId      = "TaskId"
+	TaskId      = "taskId"
 	Password    = "password"
 	CookieName  = "session_id"
 )
