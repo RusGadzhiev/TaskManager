@@ -2,8 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"time"
+)
+
+var (
+	ErrNoUserBySession = errors.New("no user by session")
+	letterRunes        = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
 type SessionsStorage interface {
@@ -31,14 +37,14 @@ func (s *SessionsService) DeleteCookie(ctx context.Context, cookieVal string) er
 
 func (s *SessionsService) AddCookie(ctx context.Context, username string) (*Session, error) {
 	cookieVal := randStringChars(32)
-	dur :=  72 * time.Hour
+	dur := 72 * time.Hour
 	err := s.repo.Add(ctx, cookieVal, username, dur)
 	if err != nil {
 		return nil, err
 	}
 	session := &Session{
 		CookieVal: cookieVal,
-		Dur: dur,
+		Dur:       dur,
 	}
 	return session, nil
 }

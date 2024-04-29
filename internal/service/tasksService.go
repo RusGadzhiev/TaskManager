@@ -2,6 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
+)
+
+var (
+	ErrBadId = errors.New("bad id")
 )
 
 type TasksStorage interface {
@@ -39,7 +44,7 @@ func (s *TasksService) GetMyTasks(ctx context.Context, username string) ([]*Task
 	tasks, err := s.repo.GetMyTasks(ctx, username)
 	return tasks, err
 }
-// возвращает id вставленной задачи
+
 func (s *TasksService) Add(ctx context.Context, task *Task) (uint64, error) {
 	id, err := s.repo.Add(ctx, task)
 	return id, err

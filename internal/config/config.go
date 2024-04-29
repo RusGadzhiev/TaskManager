@@ -12,7 +12,6 @@ const (
 )
 
 type Config struct {
-	// Env        string     `yaml:"env" env-required:"true"` можно и указать
 	HTTPServer HTTPServer `yaml:"http_server"`
 	MySQLDb    MySQLDb    `yaml:"mysql_db"`
 	MongoDb    MongoDb    `yaml:"mongo_db"`

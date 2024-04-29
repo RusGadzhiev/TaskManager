@@ -17,5 +17,3 @@ func NewZapLogger() *zap.SugaredLogger {
 	}
 	return logger.Sugar()
 }
-
-// напиши свои функции с контекстом (у випа)

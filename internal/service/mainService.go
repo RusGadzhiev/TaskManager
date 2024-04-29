@@ -1,5 +1,19 @@
 package service
 
+const (
+	Description        = "description"
+	Executor           = "executor"
+	UserName           = "username"
+	TaskId             = "taskId"
+	Password           = "password"
+	CookieName         = "session_id"
+	FilterAllTasks     = "AllTasks"
+	FilterMyTasks      = "MyTasks"
+	FilterCreatedTasks = "CreatedTasks"
+	FilterAssign       = "Assign"
+	FilterUnassign     = "Unassign"
+	FilterComplete     = "Complete"
+)
 
 type service struct {
 	UsersService

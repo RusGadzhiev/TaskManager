@@ -18,7 +18,6 @@ import (
 	"github.com/RusGadzhiev/TaskManager/pkg/logger"
 )
 
-// что делать приватным а что публичным
 const (
 	templatePattern = "./templates/*"
 )

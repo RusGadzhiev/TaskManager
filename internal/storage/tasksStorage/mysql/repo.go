@@ -1,13 +1,14 @@
 package mysql
 
 import (
-	"github.com/RusGadzhiev/TaskManager/internal/config"
-	"github.com/RusGadzhiev/TaskManager/internal/service"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+
+	"github.com/RusGadzhiev/TaskManager/internal/config"
+	"github.com/RusGadzhiev/TaskManager/internal/service"
 
 	"github.com/go-sql-driver/mysql"
 )
@@ -37,8 +38,6 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 	}
 
 	db := sql.OpenDB(connector)
-	// строка ниже нужна чтобы база успела подняться, строка не нужна если контейнер Task_manager в режиме restart always
-	// time.Sleep(5 * time.Second) // выяснить почему без этого не работает пинг
 
 	db.SetMaxOpenConns(10)
 	err = db.Ping()
@@ -46,9 +45,25 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 		log.Fatalf("Error: %s, Description: %s", err, ErrPingMySQL)
 	}
 
-	query := `CREATE TABLE IF NOT EXISTS Tasks(id int primary key auto_increment, owner text, 
-	executor text, description text, completed bool, assigned bool)`
-	// добавь индекс
+	query := `
+		CREATE TABLE IF NOT EXISTS Tasks (
+					id 			INT PRIMARY KEY AUTO_INCREMENT,
+					owner 		TEXT, 
+					executor 	TEXT,
+					description TEXT,
+					completed 	BOOL,
+					assigned 	BOOL
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_owner ON Tasks USING hash(
+			owner
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_executor ON links USING hash(
+			executor
+		);
+	`
+
 	_, err = db.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatalf("Error %s, Description: %s", err, ErrCreatingTableMySQL)

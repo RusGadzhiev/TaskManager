@@ -1,6 +1,15 @@
 package service
 
-import "context"
+import (
+	"context"
+	"errors"
+)
+
+var (
+	ErrNoUser            = errors.New("no such user")
+	ErrUserExist         = errors.New("user with this login exists")
+	ErrIncorrectPassword = errors.New("incorrect password")
+)
 
 type UsersStorage interface {
 	// возвращает ошибку service.ErrNoUser если юзера нет
@@ -32,7 +41,6 @@ func (s *UsersService) Authentificate(ctx context.Context, user *User) error {
 	return nil
 }
 
-// возвращает ошбику service.ErrUserExist если юзер уже есть
 func (s *UsersService) AddUser(ctx context.Context, user *User) error {
 	return s.repo.AddUser(ctx, user)
 }

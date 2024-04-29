@@ -8,15 +8,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/RusGadzhiev/TaskManager/internal/service"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
-	"github.com/RusGadzhiev/TaskManager/internal/service"
 )
 
-// куда закинуть функции утилиты
-// добавь контекст к каждому запросу
-// попробуй вынести контекст в middleware
-// время для контекста должно браться из конфига
+const (
+	templateCreate       = "create.html"
+	templateAssign       = "assign.html"
+	templateUnassign     = "unassign.html"
+	templateRegistration = "registration.html"
+	templateLogout       = "logout.html"
+	templateComplete     = "complete.html"
+	templateLogin        = "login.html"
+)
 
 type TasksService interface {
 	GetAllTasks(ctx context.Context) ([]*service.Task, error)
@@ -44,7 +49,6 @@ type SessionsService interface {
 	GetUserByCookie(ctx context.Context, cookieVal string) (string, error)
 }
 
-// ни от чего не зависит, использует только свои модели, легко переиспользуется
 type Service interface {
 	UsersService
 	TasksService
@@ -58,9 +62,11 @@ type HttpHandler struct {
 }
 
 func (h *HttpHandler) New(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10 * time.Second)
+	defer cancel()
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "create.html")
+		h.execTmpl(w, templateCreate)
 		return
 	}
 
@@ -78,7 +84,7 @@ func (h *HttpHandler) New(w http.ResponseWriter, r *http.Request) {
 		Completed:   false,
 		Assigned:    assign,
 	}
-	taskId, err := h.service.Add(r.Context(), task)
+	taskId, err := h.service.Add(ctx, task)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err.Error())
@@ -100,44 +106,42 @@ func (h *HttpHandler) CreatedList(w http.ResponseWriter, r *http.Request) {
 	h.listSth(w, r, service.FilterCreatedTasks)
 }
 
-// сделать исполнителем можно только себя, можно забрать чуюжую задачу
 func (h *HttpHandler) Assign(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "assign.html")
+		h.execTmpl(w, templateAssign)
 		return
 	}
 
 	h.updateSth(w, r, service.FilterAssign)
 }
 
-// можно снять любую задачу, даже чужую
 func (h *HttpHandler) Unassign(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "unassign.html")
+		h.execTmpl(w, templateUnassign)
 		return
 	}
 
 	h.updateSth(w, r, service.FilterUnassign)
 }
 
-// выполнить можно любую задачу, даже чужую
 func (h *HttpHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "complete.html")
+		h.execTmpl(w, templateComplete)
 		return
 	}
 
 	h.updateSth(w, r, service.FilterComplete)
 }
 
-// предполагается что куки у пользователя нет
 func (h *HttpHandler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 20 * time.Second)
+	defer cancel()
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "login.html")
+		h.execTmpl(w, templateLogin)
 		return
 	}
 
@@ -146,8 +150,8 @@ func (h *HttpHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Password: r.FormValue(service.Password),
 	}
 
-	err := h.service.Authentificate(r.Context(), &newUser)
-	if err == service.ErrNoUser ||  err == service.ErrIncorrectPassword {
+	err := h.service.Authentificate(ctx, &newUser)
+	if err == service.ErrNoUser || err == service.ErrIncorrectPassword {
 		h.logger.Info(err.Error(), " user: ", newUser.UserName)
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
@@ -157,7 +161,7 @@ func (h *HttpHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.service.AddCookie(r.Context(), newUser.UserName)
+	session, err := h.service.AddCookie(ctx, newUser.UserName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		h.logger.Error(err.Error())
@@ -173,9 +177,11 @@ func (h *HttpHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HttpHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10 * time.Second)
+	defer cancel()
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "logout.html")
+		h.execTmpl(w, templateLogout)
 		return
 	}
 
@@ -186,7 +192,7 @@ func (h *HttpHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.DeleteCookie(r.Context(), cookie.Value)
+	err = h.service.DeleteCookie(ctx, cookie.Value)
 	if err != nil {
 		h.logger.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -199,9 +205,11 @@ func (h *HttpHandler) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HttpHandler) Registration(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10 * time.Second)
+	defer cancel()
 
 	if r.Method == http.MethodGet {
-		h.execTmpl(w, "registration.html")
+		h.execTmpl(w, templateRegistration)
 		return
 	}
 
@@ -210,7 +218,7 @@ func (h *HttpHandler) Registration(w http.ResponseWriter, r *http.Request) {
 		Password: r.FormValue(service.Password),
 	}
 
-	err := h.service.AddUser(r.Context(), &user)
+	err := h.service.AddUser(ctx, &user)
 	if err == service.ErrUserExist {
 		h.logger.Info(service.ErrUserExist.Error(), ": ", user.UserName)
 		http.Error(w, service.ErrUserExist.Error(), http.StatusUnauthorized)
@@ -236,6 +244,8 @@ func renderJSON(w http.ResponseWriter, v interface{}, logger *zap.SugaredLogger)
 }
 
 func (h *HttpHandler) listSth(w http.ResponseWriter, r *http.Request, filter string) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10 * time.Second)
+	defer cancel()
 
 	vars := mux.Vars(r)
 	username := vars[service.UserName]
@@ -244,11 +254,11 @@ func (h *HttpHandler) listSth(w http.ResponseWriter, r *http.Request, filter str
 
 	switch filter {
 	case service.FilterAllTasks:
-		tasksList, err = h.service.GetAllTasks(r.Context())
+		tasksList, err = h.service.GetAllTasks(ctx)
 	case service.FilterMyTasks:
-		tasksList, err = h.service.GetMyTasks(r.Context(), username)
+		tasksList, err = h.service.GetMyTasks(ctx, username)
 	case service.FilterCreatedTasks:
-		tasksList, err = h.service.GetCreatedTasks(r.Context(), username)
+		tasksList, err = h.service.GetCreatedTasks(ctx, username)
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -260,6 +270,9 @@ func (h *HttpHandler) listSth(w http.ResponseWriter, r *http.Request, filter str
 }
 
 func (h *HttpHandler) updateSth(w http.ResponseWriter, r *http.Request, filter string) {
+	ctx, cancel := context.WithTimeout(r.Context(), 10 * time.Second)
+	defer cancel()
+
 	taskId, err := strconv.Atoi(r.FormValue(service.TaskId))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -269,11 +282,11 @@ func (h *HttpHandler) updateSth(w http.ResponseWriter, r *http.Request, filter s
 	vars := mux.Vars(r)
 	switch filter {
 	case service.FilterAssign:
-		err = h.service.Assign(r.Context(), uint64(taskId), vars[service.UserName])
+		err = h.service.Assign(ctx, uint64(taskId), vars[service.UserName])
 	case service.FilterUnassign:
-		err = h.service.Unassign(r.Context(), uint64(taskId))
+		err = h.service.Unassign(ctx, uint64(taskId))
 	case service.FilterComplete:
-		err = h.service.Complete(r.Context(), uint64(taskId))
+		err = h.service.Complete(ctx, uint64(taskId))
 	}
 
 	if err != nil {
