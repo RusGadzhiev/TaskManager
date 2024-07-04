@@ -20,7 +20,7 @@ var (
 )
 
 type TasksRepoMySQL struct {
-	DB *sql.DB
+	db *sql.DB
 }
 
 func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMySQL {
@@ -47,20 +47,13 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 
 	query := `
 		CREATE TABLE IF NOT EXISTS Tasks (
-					id 			INT PRIMARY KEY AUTO_INCREMENT,
-					owner 		TEXT, 
-					executor 	TEXT,
-					description TEXT,
-					completed 	BOOL,
-					assigned 	BOOL
-		);
-
-		CREATE INDEX IF NOT EXISTS idx_owner ON Tasks USING hash(
-			owner
-		);
-
-		CREATE INDEX IF NOT EXISTS idx_executor ON links USING hash(
-			executor
+			id 			INT PRIMARY KEY AUTO_INCREMENT,
+			owner 		VARCHAR(100), 
+			executor 	TEXT,
+			description TEXT,
+			completed 	BOOL,
+			assigned 	BOOL,
+			INDEX(owner)
 		);
 	`
 
@@ -69,11 +62,11 @@ func NewTasksRepoMySQL(ctx context.Context, config *config.MySQLDb) *TasksRepoMy
 		log.Fatalf("Error %s, Description: %s", err, ErrCreatingTableMySQL)
 	}
 
-	return &TasksRepoMySQL{DB: db}
+	return &TasksRepoMySQL{db: db}
 }
 
 func (repo *TasksRepoMySQL) Add(ctx context.Context, task *service.Task) (uint64, error) {
-	res, err := repo.DB.ExecContext(ctx,
+	res, err := repo.db.ExecContext(ctx,
 		"INSERT INTO Tasks (`owner`, `executor`, `description`, `completed`, `assigned`) VALUES (?, ?, ?, ?, ?)",
 		task.Owner,
 		task.Executor,
@@ -120,11 +113,11 @@ func (repo *TasksRepoMySQL) getSomeTasks(ctx context.Context, filter string, arg
 	var err error
 	switch filter {
 	case service.FilterAllTasks:
-		rows, err = repo.DB.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks")
+		rows, err = repo.db.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks")
 	case service.FilterMyTasks:
-		rows, err = repo.DB.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks WHERE executor=?", args[service.UserName])
+		rows, err = repo.db.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks WHERE executor=?", args[service.UserName])
 	case service.FilterCreatedTasks:
-		rows, err = repo.DB.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks WHERE owner=?", args[service.UserName])
+		rows, err = repo.db.QueryContext(ctx, "SELECT id, owner, executor, description, completed, assigned FROM Tasks WHERE owner=?", args[service.UserName])
 	}
 	if err != nil {
 		return nil, fmt.Errorf("select mysql error: %w", err)
@@ -147,11 +140,11 @@ func (repo *TasksRepoMySQL) updateSth(ctx context.Context, filter string, args m
 	var err error
 	switch filter {
 	case service.FilterAssign:
-		_, err = repo.DB.QueryContext(ctx, "UPDATE Tasks SET `executor` = ?, `assigned` = 1 WHERE id = ?", args[service.UserName], args[service.TaskId])
+		_, err = repo.db.QueryContext(ctx, "UPDATE Tasks SET `executor` = ?, `assigned` = 1 WHERE id = ?", args[service.UserName], args[service.TaskId])
 	case service.FilterUnassign:
-		_, err = repo.DB.QueryContext(ctx, "UPDATE Tasks SET `executor` = \"\", `assigned` = 0 WHERE id = ?", args[service.TaskId])
+		_, err = repo.db.QueryContext(ctx, "UPDATE Tasks SET `executor` = \"\", `assigned` = 0 WHERE id = ?", args[service.TaskId])
 	case service.FilterComplete:
-		_, err = repo.DB.QueryContext(ctx, "UPDATE Tasks SET `completed` = 1 WHERE id = ?", args[service.TaskId])
+		_, err = repo.db.QueryContext(ctx, "UPDATE Tasks SET `completed` = 1 WHERE id = ?", args[service.TaskId])
 	}
 	if err != nil {
 		return fmt.Errorf("update mysql error: %w", err)

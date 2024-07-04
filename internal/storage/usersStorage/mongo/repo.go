@@ -20,15 +20,15 @@ var (
 )
 
 const (
-	DBName         = "task_manager"
-	CollectionName = "users"
+	dbName         = "task_manager"
+	collectionName = "users"
 )
 
-type UsersRepoMongoDB struct {
-	DB *mongo.Collection
+type UsersRepoMongodb struct {
+	db *mongo.Collection
 }
 
-func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMongoDB, *mongo.Client) {
+func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMongodb, *mongo.Client) {
 	uri := fmt.Sprintf("mongodb://" + cfg.Host + ":" + cfg.Port + "/messenger?directConnection=true")
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
@@ -40,12 +40,12 @@ func NewUsersRepoMongoDB(ctx context.Context, cfg *config.MongoDb) (*UsersRepoMo
 		log.Fatalf("Error: %s, Description: %s", err, ErrPingMongo)
 	}
 
-	collection := client.Database(DBName).Collection(CollectionName)
-	return &UsersRepoMongoDB{DB: collection}, client
+	collection := client.Database(dbName).Collection(collectionName)
+	return &UsersRepoMongodb{db: collection}, client
 }
 
-func (repo *UsersRepoMongoDB) GetUser(ctx context.Context, username string) (*service.User, error) {
-	res := repo.DB.FindOne(ctx, bson.M{service.UserName: username})
+func (repo *UsersRepoMongodb) GetUser(ctx context.Context, username string) (*service.User, error) {
+	res := repo.db.FindOne(ctx, bson.M{service.UserName: username})
 	if res.Err() == mongo.ErrNoDocuments {
 		return nil, service.ErrNoUser
 	} else if res.Err() != nil {
@@ -58,8 +58,8 @@ func (repo *UsersRepoMongoDB) GetUser(ctx context.Context, username string) (*se
 	}
 	return &user, nil
 }
-func (repo *UsersRepoMongoDB) AddUser(ctx context.Context, user *service.User) error {
-	_, err := repo.DB.InsertOne(ctx, *user)
+func (repo *UsersRepoMongodb) AddUser(ctx context.Context, user *service.User) error {
+	_, err := repo.db.InsertOne(ctx, *user)
 	if err != nil {
 		return fmt.Errorf("insert mongo error: %w", err)
 	}

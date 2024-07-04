@@ -35,17 +35,13 @@ type TasksService interface {
 }
 
 type UsersService interface {
-	// возвращает ошибку service.ErrNoUser если юзера нет, ошбику service.ErrIncorrectPassword если пароль неверный
 	Authentificate(ctx context.Context, user *service.User) error
-	// возвращает ошибку service.ErrUserExist если юзер уже есть
 	AddUser(ctx context.Context, user *service.User) error
 }
 
 type SessionsService interface {
 	DeleteCookie(ctx context.Context, cookieVal string) error
-	// возвращает значение созданной куки и продолжительность действия
 	AddCookie(ctx context.Context, username string) (*service.Session, error)
-	// возвращает юзернейм по значению куки
 	GetUserByCookie(ctx context.Context, cookieVal string) (string, error)
 }
 

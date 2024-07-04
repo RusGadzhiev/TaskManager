@@ -18,7 +18,7 @@ var (
 )
 
 type SessionsRepoRedis struct {
-	DB *redis.Client
+	db *redis.Client
 }
 
 func NewSessionsRepoRedis(ctx context.Context, cfg *config.RedisDb) *SessionsRepoRedis {
@@ -34,12 +34,12 @@ func NewSessionsRepoRedis(ctx context.Context, cfg *config.RedisDb) *SessionsRep
 	}
 
 	return &SessionsRepoRedis{
-		DB: rdb,
+		db: rdb,
 	}
 }
 
 func (repo *SessionsRepoRedis) GetUser(ctx context.Context, cookieVal string) (string, error) {
-	val, err := repo.DB.Get(ctx, cookieVal).Result()
+	val, err := repo.db.Get(ctx, cookieVal).Result()
 	if err == redis.Nil {
 		return "", service.ErrNoUserBySession
 	} else if err != nil {
@@ -49,7 +49,7 @@ func (repo *SessionsRepoRedis) GetUser(ctx context.Context, cookieVal string) (s
 }
 
 func (repo *SessionsRepoRedis) Add(ctx context.Context, cookieVal string, username string, dur time.Duration) error {
-	_, err := repo.DB.Set(ctx, cookieVal, username, dur).Result()
+	_, err := repo.db.Set(ctx, cookieVal, username, dur).Result()
 	if err != nil {
 		return fmt.Errorf("insert redis error: %w", err)
 	}
@@ -57,7 +57,7 @@ func (repo *SessionsRepoRedis) Add(ctx context.Context, cookieVal string, userna
 }
 
 func (repo *SessionsRepoRedis) Delete(ctx context.Context, cookieVal string) error {
-	_, err := repo.DB.Del(ctx, cookieVal).Result()
+	_, err := repo.db.Del(ctx, cookieVal).Result()
 	if err != nil {
 		return fmt.Errorf("delete redis error: %w", err)
 	}

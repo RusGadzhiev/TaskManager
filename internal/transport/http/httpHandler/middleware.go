@@ -14,7 +14,6 @@ func (h *HttpHandler) LoggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// по значению куки устанавливает значение username
 func (h *HttpHandler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(service.CookieName)

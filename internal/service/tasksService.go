@@ -2,18 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
-)
-
-var (
-	ErrBadId = errors.New("bad id")
 )
 
 type TasksStorage interface {
 	GetAllTasks(ctx context.Context) ([]*Task, error)
 	GetCreatedTasks(ctx context.Context, username string) ([]*Task, error)
 	GetMyTasks(ctx context.Context, username string) ([]*Task, error)
-	// возвращает id вставленной задачи
 	Add(ctx context.Context, task *Task) (uint64, error)
 	Assign(ctx context.Context, taskId uint64, username string) error
 	Unassign(ctx context.Context, taskId uint64) error

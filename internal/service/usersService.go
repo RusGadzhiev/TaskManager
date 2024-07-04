@@ -12,9 +12,7 @@ var (
 )
 
 type UsersStorage interface {
-	// возвращает ошибку service.ErrNoUser если юзера нет
 	GetUser(ctx context.Context, username string) (*User, error)
-	// возвращает ошибку service.ErrUserExist если юзер уже есть
 	AddUser(ctx context.Context, user *User) error
 }
 
